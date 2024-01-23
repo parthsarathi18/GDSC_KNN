@@ -1,58 +1,49 @@
-from dotenv import load_dotenv()
+from dotenv import load_dotenv
 load_dotenv()
 
 import streamlit as st
-from PIL import Image
-import google.generativeai as genai
+import os
+from PIL import Image #python image library
+import google.generativeai as genai 
 
-genai.configure(api_key=os.getenv('GENAI_API_KEY'))  # Assuming you have an API key for GenAI
+#genai.configure(api_key=os.getenv('GOOGLE_API_KEY'))
 
-model = genai.ChatCompletion.create(
-    model="gpt-3.5-turbo",
-    messages=[
-        {"role": "system", "content": "You are an expert in understanding invoices."},
-        {"role": "user", "content": "we will upload an image as an invoice, and you will have to answer any questions based on the uploaded invoice image."},
-    ]
-)
 
-def get_gemini_response(input, image_data, user_prompt):
-    input_message = {"role": "user", "content": input}
-    image_message = {"role": "user", "content": image_data}
-    prompt_message = {"role": "user", "content": user_prompt}
-    
-    model['messages'].extend([input_message, image_message, prompt_message])
-    response = genai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=model['messages']
-    )
-    
-    return response['choices'][0]['message']['content']
+model= genai.GenerativeModel('gemini-pro-vision')
 
-def input_image_details(uploaded_file):
+def get_gemini_response(input,image_data,user_prompt):
+    response = model.generate_content([input,image_data[0],user_prompt])
+    return response.text
+
+def input_image_details(upload_file):
     if uploaded_file is not None:
-        bytes_data = uploaded_file.read()
+        bytes_data=uploaded_file.getvalue()
         image_parts = [{
-            'mine_type': uploaded_file.type,
-            'data': bytes_data
+            'mime_type':uploaded_file.type,
+            'data':bytes_data
         }]
         return image_parts
     else:
         raise FileNotFoundError('No file uploaded')
+    
+st.header('Multilanguage invoice Extractor')
 
-st.header('Multilanguage Invoice extractor')
-
-input_prompt = st.text_input('Input Prompt', key='input')
-uploaded_file = st.file_uploader('Image', type=['jpg', 'jpeg', 'png'])
+input = st.text_input('Input Prompt',key='input')
+uploaded_file=st.file_uploader('Image',type=['jpg','jpeg','png'])
 
 if uploaded_file is not None:
     image = Image.open(uploaded_file)
-    st.image(image, caption='Uploaded File', use_column_width=True)
+    st.image(image,caption='uploaded File',use_column_width=True)
 
-sub = st.button("Tell me about the invoice")
+sub = st.button('tell me about the invoice')
+
+input_prompt = """you are expert in understanding invoices.
+we will upload an image as a invoice and you will have to answer any
+questions based on the uploded invoice image."""
 
 if sub:
-    with st.spinner("Wait"):
+    with st.spinner('wait'):
         image_data = input_image_details(uploaded_file)
-        response = get_gemini_response(input_prompt, image_data, input_prompt)
-        st.subheader("The response is")
-        st.text_area(label="", value=response, height=500)
+        response=get_gemini_response(input_prompt,image_data,input)
+        st.subheader('the response is')
+        st.text_area(label="",value=response,height=500)
