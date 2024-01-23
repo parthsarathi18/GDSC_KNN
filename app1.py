@@ -34,7 +34,7 @@ if uploaded_file is not None:
     image= image.open(uploaded_file)
     st.image(image,caption='uploaded File',use_column_width=True)
 
-sub= st.button{["tell me about the invoice"]}    
+sub= st.button(["tell me about the invoice"])
 
 input_prompt="""you are an expert in understanding invoices.
 we will upload an image as a invoice and you will have to answer any questions based on the uploaded invoice image."""
